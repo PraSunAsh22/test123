@@ -1,15 +1,20 @@
-DevOps Project
-For this project, please think about how you would architect a scalable and secure static web application in AWS or another IaaS provider.
-• Create and deploy a running instance of a web server using a configuration management tool of your choice. The web server should serve one page with the following content.
- 
-<html>
-  <head>
-<title>Hello World</title> </head>
-<body>
-<h1>Hello World!</h1>
-  </body>
-</html>
-• Secure this application and host such that only appropriate ports are publicly exposed and any http requests are redirected to https. This should be automated using a configuration management tool of your choice and you should feel free to use a self-signed certificate for the web server.
-• Develop and apply automated tests to validate the correctness of the server configuration.
-• Express everything in code and provide your code via a Git repository in GitHub.
-Be prepared to walk though your code, discuss your thought process, and talk through how you might monitor and scale this application. You should also be able to demo a running instance of the host.
+Apache set
+
+HTTP redirects set up
+
+Using the X-Forwarded-Proto header of the HTTP request, change your web server’s rewrite rule to apply only if the client protocol is HTTP. Ignore the rewrite rule for all other protocols used by the client.
+This way, if clients use HTTP to access your website, they are redirected to an HTTPS URL, and if clients use HTTPS, they are served directly by the web server.
+
+The rewrite rule must be included in your virtual host section of the configuration file. For example, with Apache httpd server, edit the /etc/httpd/conf/httpd.conf file, and for Apache 2.4, edit the conf file in the /etc/apache2/sites-enabled/ folder.
+
+<VirtualHost *:80>
+
+RewriteEngine On
+RewriteCond %{HTTP:X-Forwarded-Proto} =http
+RewriteRule .* https://%{HTTP:Host}%{REQUEST_URI} [L,R=permanent]
+
+</VirtualHost>
+
+Load balancer set up
+
+I am using both HTTP and HTTPS listeners on my Elastic Load Balancing (ELB) load balancer. The ELB is offloading SSL, and the backend is listening only on a single HTTP port (HTTPS to HTTP). I want all traffic coming to my web server on port 80 to be redirected to HTTPS port 443, but I don’t want to change my backend listener to port 443.
